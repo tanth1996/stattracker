@@ -1,6 +1,7 @@
 package com.tanth.stattracker.player.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.tanth.stattracker.user.models.UserEntity;
 import jakarta.persistence.*;
 
 import java.util.Objects;
@@ -17,12 +18,16 @@ public class Player {
     @Column(nullable = false, unique = true)
     private String displayName;
 
+    @OneToOne(mappedBy = "player", cascade = CascadeType.ALL)
+    private UserEntity user;
+
     protected Player() {
         // Default constructor for JPA
     }
 
-    public Player(String displayName) {
+    public Player(String displayName, UserEntity user) {
         this.displayName = displayName;
+        this.setUser(user);
     }
 
     @Override
@@ -35,12 +40,14 @@ public class Player {
         }
         Player player = (Player) o;
         return Objects.equals(id, player.id)
-                && Objects.equals(displayName, player.displayName);
+                && Objects.equals(displayName, player.displayName)
+                && Objects.equals(version, player.version)
+                && Objects.equals(user, player.user);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, displayName);
+        return Objects.hash(id, displayName, version, user);
     }
 
     @Override
@@ -66,6 +73,15 @@ public class Player {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public UserEntity getUser() {
+        return user;
+    }
+
+    public void setUser(UserEntity user) {
+        this.user = user;
+        user.setPlayer(this);
     }
 
 

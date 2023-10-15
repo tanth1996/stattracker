@@ -84,7 +84,7 @@ class App extends React.Component {
 
 	onUpdate(player, updatedPlayer) {
 		client({
-			method: 'PUT',
+			method: 'PATCH',
 			path: getEntitySelfRefLink(player.entity),
 			entity: updatedPlayer,
 			headers: {
@@ -187,7 +187,7 @@ class App extends React.Component {
 	render() {
 		return (
 			<div>
-				<CreateDialog attributes={this.state.attributes.filter(attribute => attribute !== 'id')} onCreate={this.onCreate}/>
+				<CreateDialog attributes={this.state.attributes.filter(attribute => attribute !== 'id' && attribute !== 'user')} onCreate={this.onCreate}/>
 				<PlayerList players={this.state.players}
 					attributes = {this.state.attributes}
 					links={this.state.links}
@@ -282,6 +282,7 @@ class PlayerList extends React.Component{
 						<tr>
 							<th>ID</th>
 							<th>Display Name</th>
+							<th>User</th>
 						</tr>
 						{players}
 					</tbody>
@@ -312,9 +313,10 @@ class Player extends React.Component{
 			<tr>
 				<td>{this.props.player.entity.id}</td>
 				<td>{this.props.player.entity.displayName}</td>
+				<td>{this.props.player.entity.user?.username}</td>
 				<td>
 					<UpdateDialog player={this.props.player} 
-						attributes={this.props.attributes.filter(attribute => attribute !== 'id')} 
+						attributes={this.props.attributes.filter(attribute => attribute !== 'id' && attribute !== 'user')} 
 						onUpdate={this.props.onUpdate}/>
 				</td>
 				<td>
