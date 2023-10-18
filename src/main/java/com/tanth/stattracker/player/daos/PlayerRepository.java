@@ -22,7 +22,7 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
     void deleteById(@Param("id") Long id);
 
     @Override
-    @PreAuthorize("#player?.user?.username == authentication?.name")
+    @PreAuthorize("#player.id == null or #player?.user?.username == authentication?.name")
     void delete(@Param("player") Player player);
 
 

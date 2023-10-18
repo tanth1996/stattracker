@@ -18,7 +18,7 @@ public class Player {
     @Column(nullable = false, unique = true)
     private String displayName;
 
-    @OneToOne(mappedBy = "player", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "player")
     private UserEntity user;
 
     protected Player() {

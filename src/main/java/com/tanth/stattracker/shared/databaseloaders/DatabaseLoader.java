@@ -31,6 +31,7 @@ public class DatabaseLoader implements CommandLineRunner {
         UserEntity defaultUser = userRepository.findByUsername("tth");
         if (defaultUser == null) {
             defaultUser = new UserEntity("tth", "1234", new String[] {"ROLE_PLAYER_ADMIN"}, null);
+            defaultUser = this.userRepository.save(defaultUser);
         }
 
         SecurityContextHolder.getContext().setAuthentication(
@@ -38,7 +39,8 @@ public class DatabaseLoader implements CommandLineRunner {
                         AuthorityUtils.createAuthorityList("ROLE_PLAYER_ADMIN")));
         if (playerRepository.findByDisplayName("TH").isEmpty()) {
             final var player = new Player("TH", defaultUser);
-            this.userRepository.save(defaultUser);
+            this.playerRepository.save(player);
+            this.userRepository.save(defaultUser); // We need to save the User since the Player FK is there
         }
         SecurityContextHolder.clearContext();
     }

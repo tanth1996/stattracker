@@ -23,7 +23,7 @@ public class UserEntity {
     @JsonIgnore
     private String[] roles;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne
     @JoinTable(
             name = "User_Player",
             joinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")},

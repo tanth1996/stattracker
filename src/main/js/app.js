@@ -32,7 +32,7 @@ class App extends React.Component {
 
 	constructor(props) {
 		super(props);
-		this.state = {players: [], attributes: [], page: 1, pageSize: 2, links: {}};
+		this.state = {players: [], attributes: [], page: 1, pageSize: 2, links: {}, loggedInUser: this.props.loggedInUser};
 		this.onCreate = this.onCreate.bind(this);
 		this.onUpdate = this.onUpdate.bind(this);
 		this.onDelete = this.onDelete.bind(this);
@@ -94,6 +94,9 @@ class App extends React.Component {
 		}).done(response => {
 			// WebSocket will update state
 		}, response => {
+			if (response.status.code === 403) {
+				alert('You are not authorised to update ' + getEntitySelfRefLink(player.entity))
+			}
 			if (response.status.code === 412) {
 				alert('Update on ' + getEntitySelfRefLink(player.entity) + ' failed. The Player you are trying to edit has been updated elsewhere.');
 			}
@@ -104,6 +107,13 @@ class App extends React.Component {
 		client({
 			method: 'DELETE', 
 			path: getEntitySelfRefLink(player.entity)
+		}).done(response => {
+			// WebSocket will update state
+		}, response => {
+		
+			if (response.status.code === 403) {
+				alert('You are not authorised to delete ' + getEntitySelfRefLink(player.entity))
+			}
 		});
 	}
 	
@@ -197,6 +207,7 @@ class App extends React.Component {
 					updatePageSize={this.updatePageSize}
 					onUpdate={this.onUpdate}
 					onDelete={this.onDelete}
+					loggedInUser={this.state.loggedInUser}
 				/>
 			</div>
 		)
@@ -256,7 +267,8 @@ class PlayerList extends React.Component{
 				player={player} 
 				attributes={this.props.attributes}
 				onUpdate={this.props.onUpdate} 
-				onDelete={this.props.onDelete}/>
+				onDelete={this.props.onDelete}
+				loggedInUser={this.props.loggedInUser}/>
 		);
 
 		const navLinks = [];
@@ -317,7 +329,8 @@ class Player extends React.Component{
 				<td>
 					<UpdateDialog player={this.props.player} 
 						attributes={this.props.attributes.filter(attribute => attribute !== 'id' && attribute !== 'user')} 
-						onUpdate={this.props.onUpdate}/>
+						onUpdate={this.props.onUpdate}
+						loggedInUser={this.props.loggedInUser}/>
 				</td>
 				<td>
 					<button onClick={this.handleDelete}>Delete</button>
@@ -401,6 +414,15 @@ class UpdateDialog extends React.Component {
 	}
 
 	render() {
+		const playerUser = this.props.player.entity.user;
+		if (playerUser !== null && playerUser.username !== this.props.loggedInUser) {
+			return (
+				<div>
+					<a>This player belongs to another user.</a>
+				</div>
+			)
+		}
+
 		const inputs = this.props.attributes.map(attribute =>
 			<p key={this.props.player.entity[attribute]}>
 				<input type="text" placeholder={attribute}
@@ -434,6 +456,6 @@ class UpdateDialog extends React.Component {
 
 
 ReactDOM.render(
-	<App />,
+	<App loggedInUser={document.getElementById('username').innerHTML}/>,
 	document.getElementById('react')
 )
