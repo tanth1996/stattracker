@@ -1,11 +1,13 @@
-const React = require('react');
-const ReactDOM = require('react-dom');
-const client = require('./client');
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
+import client from './client';
 
-const stompClient = require('./websocket-listener');
+import register from './websocket-listener';
 
-const follow = require('./follow'); // function to hop multiple links by "rel"
-const root = '/api';
+import follow from './follow'; // function to hop multiple links by "rel"
+
+const endpointRoot = '/api';
 
 const PLAYERS_ENDPOINT = 'players';
 
@@ -27,8 +29,12 @@ function getEntitiesFromEmbeddedCollection(entityCollection) {
 	return Promise.all(entityCollection.map(entity => getEntity(entity)));
 }
 
+type AppState = {players: any[]; attributes: any[]; page: number; pageSize: number; links: {}; loggedInUser: any; };
 
-class App extends React.Component {
+class App extends React.Component<any, AppState> {
+	links: any;
+	page: any;
+	schema: any;
 
 	constructor(props) {
 		super(props);
@@ -43,7 +49,7 @@ class App extends React.Component {
 	}
 
 	loadFromServer(pageSize) {
-		follow(client, root, [
+		follow(client, endpointRoot, [
 			{rel: PLAYERS_ENDPOINT, params: {size: pageSize}}]
 		).then(playerCollection => {
 			this.links = playerCollection.entity._links;
@@ -60,7 +66,7 @@ class App extends React.Component {
 			});
 		}).then(playerCollection => {
 			return getEntitiesFromEmbeddedCollection(playerCollection.entity._embedded.players);
-		}).done(players => {
+		}).then(players => {
 			this.setState({
 				page: this.page,
 				players: players,
@@ -71,8 +77,8 @@ class App extends React.Component {
 	}
 
 	onCreate(newPlayer) {
-		follow(client, root, [PLAYERS_ENDPOINT])
-		.done(playerCollection => {
+		follow(client, endpointRoot, [PLAYERS_ENDPOINT])
+		.then(playerCollection => {
 			return client({
 				method: 'POST',
 				path: getEntitySelfRefLink(playerCollection.entity),
@@ -91,7 +97,7 @@ class App extends React.Component {
 				'Content-Type': 'application/json',
 				'If-Match': player.headers.Etag
 			}
-		}).done(response => {
+		}).then(response => {
 			// WebSocket will update state
 		}, response => {
 			if (response.status.code === 403) {
@@ -107,7 +113,7 @@ class App extends React.Component {
 		client({
 			method: 'DELETE', 
 			path: getEntitySelfRefLink(player.entity)
-		}).done(response => {
+		}).then(response => {
 			// WebSocket will update state
 		}, response => {
 		
@@ -123,7 +129,7 @@ class App extends React.Component {
 			this.links = playerCollection.entity._links;
 			this.page = playerCollection.entity.page;
 			return getEntitiesFromEmbeddedCollection(playerCollection.entity._embedded.players);
-		}).done(players => {
+		}).then(players => {
 			this.setState({
 				page: this.page,
 				players: players,
@@ -141,10 +147,10 @@ class App extends React.Component {
 	}
 
 	refreshAndGoToLastPage(message) {
-		follow(client, root, [{
+		follow(client, endpointRoot, [{
 			rel: PLAYERS_ENDPOINT,
 			params: {size: this.state.pageSize}
-		}]).done(response => {
+		}]).then(response => {
 			if (response.entity._links.last !== undefined) {
 				this.onNavigate(response.entity._links.last.href);
 			} else {
@@ -154,11 +160,11 @@ class App extends React.Component {
 	}
 
 	refreshCurrentPage(message) {
-		follow(client, root, [{
+		follow(client, endpointRoot, [{
 			rel: PLAYERS_ENDPOINT,
 			params: {
 				size: this.state.pageSize,
-				page: this.state.page.number
+				page: this.state.page
 			}
 		}]).then(playerCollection => {
 			this.links = playerCollection.entity._links;
@@ -177,7 +183,7 @@ class App extends React.Component {
 
 	componentDidMount() {
 		this.loadFromServer(this.state.pageSize);
-		stompClient.register([
+		register([
 			// PlayerEventHandler events
 			{
 				route: '/topic/newPlayer',
@@ -216,7 +222,8 @@ class App extends React.Component {
 }
 
 
-class PlayerList extends React.Component{
+class PlayerList extends React.Component<any, {}> {
+	pageSize: React.RefObject<HTMLInputElement>;
 
 	constructor(props) {
 		super(props);
@@ -230,11 +237,11 @@ class PlayerList extends React.Component{
 
 	handlePageSizeUpdate(e) {
 		e.preventDefault();
-		const pageSize = ReactDOM.findDOMNode(this.pageSize.current).value;
+		const pageSize = (ReactDOM.findDOMNode(this.pageSize.current) as HTMLInputElement).value;
 		if (/^[0-9]+$/.test(pageSize)) {
 			this.props.updatePageSize(pageSize);
 		} else {
-			ReactDOM.findDOMNode(this.pageSize.current).value = pageSize.substring(0, pageSize.length - 1);
+			(ReactDOM.findDOMNode(this.pageSize.current) as HTMLInputElement).value = pageSize.substring(0, pageSize.length - 1);
 		}
 	}
 	
@@ -309,7 +316,7 @@ class PlayerList extends React.Component{
 }
 
 
-class Player extends React.Component{
+class Player extends React.Component<any, {}> {
 
 	constructor(props) {
 		super(props);
@@ -342,7 +349,7 @@ class Player extends React.Component{
 }
 
 
-class CreateDialog extends React.Component {
+class CreateDialog extends React.Component<any, {}> {
 
 	constructor(props) {
 		super(props);
@@ -353,17 +360,17 @@ class CreateDialog extends React.Component {
 		e.preventDefault();
 		const newPlayer = {};
 		this.props.attributes.forEach(attribute => {
-			newPlayer[attribute] = ReactDOM.findDOMNode(this.refs[attribute]).value.trim();
+			newPlayer[attribute] = (ReactDOM.findDOMNode(this.refs[attribute]) as HTMLInputElement).value.trim();
 		});
 		this.props.onCreate(newPlayer);
 
 		// clear out the dialog's inputs
 		this.props.attributes.forEach(attribute => {
-			ReactDOM.findDOMNode(this.refs[attribute]).value = '';
+			ReactDOM.findDOMNode(this.refs[attribute]).nodeValue = '';
 		});
 
 		// Navigate away from the dialog to hide it.
-		window.location = "#";
+		window.location.href = "#";
 	}
 
 	render() {
@@ -396,7 +403,7 @@ class CreateDialog extends React.Component {
 }
 
 
-class UpdateDialog extends React.Component {
+class UpdateDialog extends React.Component<any, {}>  {
 
 	constructor(props) {
 		super(props);
@@ -407,10 +414,10 @@ class UpdateDialog extends React.Component {
 		e.preventDefault();
 		const updatedPlayer = {};
 		this.props.attributes.forEach(attribute => {
-			updatedPlayer[attribute] = ReactDOM.findDOMNode(this.refs[attribute]).value.trim();
+			updatedPlayer[attribute] = (ReactDOM.findDOMNode(this.refs[attribute]) as HTMLInputElement).value.trim();
 		});
 		this.props.onUpdate(this.props.player, updatedPlayer);
-		window.location = "#";
+		window.location.href = "#";
 	}
 
 	render() {
@@ -454,8 +461,8 @@ class UpdateDialog extends React.Component {
 
 };
 
-
-ReactDOM.render(
-	<App loggedInUser={document.getElementById('username').innerHTML}/>,
-	document.getElementById('react')
+const container = document.getElementById('react')
+const root = createRoot(container)
+root.render(
+	<App loggedInUser={document.getElementById('username').innerHTML}/>
 )

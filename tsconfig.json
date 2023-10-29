@@ -1,0 +1,14 @@
+{
+  "include": ["./src/main/js"],
+  "exclude": [],
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "target": "es6",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "src/main/resources/static/built"
+  },
+  "lib": ["es2015"]
+}

@@ -1,9 +1,9 @@
 'use strict';
 
-const SockJS = require('sockjs-client');
-require('stompjs');
+import SockJS from 'sockjs-client';
+import Stomp from 'stompjs';
 
-function register(registrations) {
+export default function register(registrations) {
 	const socket = SockJS('/players'); //WebSocketConfiguration.MATCH_ENDPOINT
 	const stompClient = Stomp.over(socket);
 	stompClient.connect({}, function(frame) {
@@ -12,5 +12,3 @@ function register(registrations) {
 		});
 	});
 }
-
-module.exports.register = register;
